@@ -8,12 +8,15 @@ task("deploy", "Deploys a contract")
   .addParam("contract", "The name of the contract")
   .setAction(async (taskArgs, hre) => {
     const { ethers } = hre;
+    await hre.run("compile");
     const factory = await ethers.getContractFactory(taskArgs.contract);
     const contract = await factory.deploy();
     await contract.waitForDeployment();
 
     const blockExplorerUrl = `https://goerli.basescan.org/address/${contract.target}`;
-    console.log(`Contract ${contract.target} deployed at ${blockExplorerUrl}`);
+
+    console.log(`Contract ${contract.target}`);
+    console.log(`Deployed at ${blockExplorerUrl}`);
     return contract.target;
   });
 
@@ -35,6 +38,7 @@ task("deployAndVerify", "Deploys and verifies a contract")
     const contractAddress = await hre.run("deploy", {
       contract: taskArgs.contract,
     });
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     await hre.run("verifyContract", {
       contract: taskArgs.contract,
       address: contractAddress,

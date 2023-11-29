@@ -6,44 +6,67 @@ require("dotenv").config();
 
 task("deploy", "Deploys a contract")
   .addParam("contract", "The name of the contract")
+  .addOptionalVariadicPositionalParam("args", "The constructor arguments")
   .setAction(async (taskArgs, hre) => {
     const { ethers } = hre;
     await hre.run("compile");
     const factory = await ethers.getContractFactory(taskArgs.contract);
-    const contract = await factory.deploy();
+    const contract = await factory.deploy(...taskArgs.args);
     await contract.waitForDeployment();
-
-    const blockExplorerUrl = `https://goerli.basescan.org/address/${contract.target}`;
-
-    console.log(`Contract ${contract.target}`);
-    console.log(`Deployed at ${blockExplorerUrl}`);
     return contract.target;
   });
 
 task("verifyContract", "Verifies a contract")
   .addParam("contract", "The name of the contract")
   .addParam("address", "The address of the deployed contract")
+  .addOptionalVariadicPositionalParam("args", "The constructor arguments")
   .setAction(async (taskArgs, hre) => {
     await hre.run("verify:verify", {
       address: taskArgs.address,
-      constructorArguments: [], // Add your constructor arguments here
+      constructorArguments: taskArgs.args,
     });
-
     console.log(`Contract verified: ${taskArgs.address}`);
   });
 
 task("deployAndVerify", "Deploys and verifies a contract")
   .addParam("contract", "The name of the contract")
+  .addOptionalVariadicPositionalParam("args", "The constructor arguments")
   .setAction(async (taskArgs, hre) => {
     const contractAddress = await hre.run("deploy", {
       contract: taskArgs.contract,
+      args: taskArgs.args,
     });
     await new Promise((resolve) => setTimeout(resolve, 10000));
     await hre.run("verifyContract", {
       contract: taskArgs.contract,
       address: contractAddress,
+      args: taskArgs.args,
     });
   });
+
+// custom script to deploy the inheretance exercise
+task("deployInheritance", "Deploys inheritance contracts").setAction(
+  async (taskArgs, hre) => {
+    const salespersonAddress = await hre.run("deploy", {
+      contract: "contracts/Inheritance.sol:Salesperson",
+      args: ["55555", "12345", "20"],
+    });
+    const engineeringManagerAddress = await hre.run("deploy", {
+      contract: "contracts/Inheritance.sol:EngineeringManager",
+      args: ["54321", "11111", "200000"],
+    });
+    const inheritanceSubmissionAddress = await hre.run("deploy", {
+      contract: "contracts/Inheritance.sol:InheritanceSubmission",
+      args: [salespersonAddress, engineeringManagerAddress],
+    });
+    console.log("Salesperson deployed at:", salespersonAddress);
+    console.log("EngineeringManager deployed at:", engineeringManagerAddress);
+    console.log(
+      "InheritanceSubmission deployed at:",
+      inheritanceSubmissionAddress
+    );
+  }
+);
 
 const config: HardhatUserConfig = {
   solidity: {

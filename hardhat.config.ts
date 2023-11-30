@@ -11,7 +11,8 @@ task("deploy", "Deploys a contract")
     const { ethers } = hre;
     await hre.run("compile");
     const factory = await ethers.getContractFactory(taskArgs.contract);
-    const contract = await factory.deploy(...taskArgs.args);
+    const args = taskArgs.args || []; // Add a default value for args
+    const contract = await factory.deploy(...args);
     await contract.waitForDeployment();
     return contract.target;
   });

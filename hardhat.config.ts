@@ -71,7 +71,14 @@ task("deployInheritance", "Deploys inheritance contracts").setAction(
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.17",
+    compilers: [
+      {
+        version: "0.8.17",
+      },
+      {
+        version: "0.8.20",
+      },
+    ],
   },
   networks: {
     // for mainnet
